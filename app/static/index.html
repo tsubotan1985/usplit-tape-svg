@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="ja" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>uSPLIT Tape SVG — STLからカット順つきSVG</title>
+<script>
+  (function(){
+    try{
+      var t = localStorage.getItem('usplit-tape-svg.theme');
+      document.documentElement.dataset.theme = t === 'dark' ? 'dark' : 'light';
+    }catch(e){}
+  })();
+</script>
+<link rel="stylesheet" href="/static/style.css?v=1.1.0">
+</head>
+<body>
+
+<header class="top">
+  <div class="brand">
+    <h1>uSPLIT Tape SVG</h1>
+    <p class="sub">STLの平面を選び、両面テープ用のカット線を実寸1:1のSVGで書き出す</p>
+  </div>
+  <div class="meta">
+    <span class="ver" id="ver">v1.1.0</span>
+    <button class="iconbtn" id="theme" title="テーマ切替">☾</button>
+  </div>
+</header>
+
+<main>
+  <!-- ------------------------------------------------ 左 -->
+  <div class="col-left">
+    <section class="block">
+      <h2><span class="num">1</span>モデル<span class="hint">STL</span></h2>
+      <div id="drop">
+        <div class="big">STLをここに落とす / クリックして選択</div>
+        <div class="small">バイナリSTL・ASCII STL。STEPはSTLに書き出してから</div>
+        <input type="file" id="file" accept=".stl,.step,.stp" hidden>
+      </div>
+      <div id="fileinfo"></div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">2</span>平面を選ぶ<span class="hint" id="facecount"></span></h2>
+      <div id="faces"><p style="color:var(--muted);font-size:12px">まだモデルがありません。</p></div>
+    </section>
+  </div>
+
+  <!-- ------------------------------------------------ 中 -->
+  <div class="col-center">
+    <section class="block">
+      <h2><span class="num">3</span>カット順プレビュー<span class="hint" id="stagenote"></span></h2>
+      <div id="stage">
+        <div class="stage-top">
+          <span class="fname" id="facesel">面を選んでください</span>
+          <span class="spacer"></span>
+          <button class="ghost" id="play">▶ 順に再生</button>
+          <button class="ghost" id="actual">実寸表示</button>
+        </div>
+        <div id="preview"><p style="color:var(--muted);font-size:12px">プレビューはここに出ます。</p></div>
+        <div class="legend">
+          <span><i class="hole"></i>内側（穴）を先に</span>
+          <span><i></i>外側（輪郭）を後に</span>
+          <span id="legenddim"></span>
+        </div>
+      </div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">4</span>カット順と開始位置<span class="hint" id="cuthint">行を選んでプレビューをクリックすると開始位置</span></h2>
+      <div id="cutlist"><p class="muted">面を選ぶとカット線が並びます。</p></div>
+    </section>
+  </div>
+
+  <!-- ------------------------------------------------ 右 -->
+  <div class="col-right">
+    <section class="block">
+      <h2><span class="num">5</span>出力設定</h2>
+      <div id="pieces"></div>
+      <div class="opt">
+        <label>カット線補正 <small>+で部品が大きくなる（外形は外へ・穴は内へ）</small></label>
+        <input type="number" id="offset" value="0" step="0.05" min="-1" max="1">
+      </div>
+      <div class="opt">
+        <label>余白 <small>シートの外周に取る余白</small></label>
+        <input type="number" id="margin" value="4" step="1" min="0" max="30">
+      </div>
+      <div class="opt">
+        <label>個数 <small>同じピースを並べて出力</small></label>
+        <input type="number" id="copies" value="1" step="1" min="1" max="20">
+      </div>
+      <div class="opt">
+        <label>ピース間隔 <small>個数が2以上のとき</small></label>
+        <input type="number" id="gap" value="3" step="0.5" min="0" max="50">
+      </div>
+      <div class="opt">
+        <label>保持タブ <small>輪郭を切り離さず残す橋の数（0で切離し）</small></label>
+        <input type="number" id="tabs" value="0" step="1" min="0" max="8">
+      </div>
+      <div class="opt">
+        <label>タブ長さ <small>1か所あたりの残し幅 [mm]</small></label>
+        <input type="number" id="tablen" value="1.2" step="0.1" min="0.3" max="10">
+      </div>
+      <div class="opt">
+        <label>回転 <small>テープ幅に合わせて回す</small></label>
+        <select id="rotate">
+          <option value="0">0°</option>
+          <option value="90">90°</option>
+          <option value="180">180°</option>
+          <option value="270">270°</option>
+        </select>
+      </div>
+      <div class="checks">
+        <label><input type="checkbox" id="mirrorx">左右反転</label>
+        <label><input type="checkbox" id="mirrory">上下反転</label>
+        <label><input type="checkbox" id="arcfit" checked>円弧に変換</label>
+        <label><input type="checkbox" id="guides">10mm基準線</label>
+      </div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">6</span>結果</h2>
+      <dl class="kv">
+        <dt>シート</dt><dd id="k-sheet">—</dd>
+        <dt>ピース</dt><dd id="k-piece">—</dd>
+        <dt>カット数</dt><dd id="k-ncuts">—</dd>
+        <dt>総カット長</dt><dd id="k-len">—</dd>
+      </dl>
+      <div id="msg"></div>
+      <button class="primary" id="dl" disabled>SVGをダウンロード</button>
+      <div class="dlrow">
+        <select id="dpi" title="PNGの解像度">
+          <option value="300">300 dpi</option>
+          <option value="600" selected>600 dpi</option>
+          <option value="1200">1200 dpi</option>
+        </select>
+        <button class="ghost" id="dlpng" disabled>PNGで保存</button>
+      </div>
+    </section>
+  </div>
+</main>
+
+<footer class="foot">
+  カット順はSVG内のグループ順（<code>cut01, cut02, …</code>）として書き出します。順序を無視して独自最適化するカッティングソフトでは、その順で切られないことがあります。
+</footer>
+
+<script src="/static/app.js?v=1.1.0"></script>
+</body>
+</html>

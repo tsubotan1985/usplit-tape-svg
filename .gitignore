@@ -1,0 +1,17 @@
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# runtime data (uploads / generated SVGs)
+data/
+_in/
+
+# build artefacts
+*.tar
+*.tar.gz
+
+# CAD input and cut files produced while testing
+*.stl
+*.step
+*.stp
+uSPLIT_*

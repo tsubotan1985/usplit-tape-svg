@@ -1,0 +1,9 @@
+services:
+  tape-svg:
+    image: usplit-tape-svg:1.1.0
+    container_name: usplit-tape-svg
+    ports:
+      - "8098:8000"
+    volumes:
+      - ./data:/app/data
+    restart: unless-stopped

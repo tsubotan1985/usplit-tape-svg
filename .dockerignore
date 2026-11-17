@@ -1,0 +1,8 @@
+__pycache__/
+*.pyc
+data/
+_in/
+*.stl
+*.step
+!app/**/*.stl
+.git/
