@@ -16,7 +16,7 @@ from . import geom, svgout
 ROOT = os.path.dirname(os.path.abspath(__file__))
 DATA = os.environ.get("DATA_DIR", os.path.join(os.path.dirname(ROOT), "data"))
 STATIC = os.path.join(ROOT, "static")
-VERSION = "1.2.1"
+VERSION = "1.3.0"
 MAX_UPLOAD = 60 * 1024 * 1024
 MAX_FACES = 20
 
@@ -97,7 +97,12 @@ def make_svg(job, face_id, opts):
     if not face:
         raise ValueError("指定の面が見つかりません（モデルを読み直してください）")
     opts = dict(opts or {})
-    drop = [str(d) for d in (opts.get("drop_pieces") or [])]
+    # 既定では「いちばん大きいピース」だけを残す（同じ平面の付随的な帯を切らない）
+    if opts.get("drop_pieces") is None:
+        pieces = geom.piece_table(face["loops"])
+        drop = [p["id"] for p in pieces[1:]]
+    else:
+        drop = [str(d) for d in (opts.get("drop_pieces") or [])]
     spec = {}
     for c in opts.get("contours") or []:
         if isinstance(c, dict) and c.get("id"):

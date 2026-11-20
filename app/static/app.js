@@ -141,7 +141,7 @@ function opts() {
     arc_fit: $('arcfit').checked,
     guides: $('guides').checked,
     tail_mm: Math.max(0, num('tail', 0)),
-    drop_pieces: S.drop.slice(),
+    ...(S.drop ? { drop_pieces: S.drop.slice() } : {}),
     contours: S.cut.map((c) => ({
       id: c.id, include: c.include, order: c.order, start_index: c.start_index, dir: c.dir,
     })),
@@ -156,9 +156,11 @@ function num(id, dflt) {
 function dropKey(id) { return 'usplit.drop.' + id; }
 function loadDrop(id) {
   try {
-    const v = JSON.parse(localStorage.getItem(dropKey(id)) || '[]');
-    return Array.isArray(v) ? v : [];
-  } catch (e) { return []; }
+    const raw = localStorage.getItem(dropKey(id));
+    if (raw === null) return null;  // 未設定: サーバ側の既定（最大ピースのみ）に任せる
+    const v = JSON.parse(raw);
+    return Array.isArray(v) ? v : null;
+  } catch (e) { return null; }
 }
 function saveDrop() {
   try { if (S.face) localStorage.setItem(dropKey(S.face), JSON.stringify(S.drop)); } catch (e) {}
@@ -182,6 +184,7 @@ async function update() {
     const j = await res.json();
     if (!res.ok) throw new Error(j.error || res.statusText);
     S.svg = j.svg; S.stats = j.stats;
+    if (!S.drop) S.drop = (j.stats.dropped || []).slice();
     syncCut(j.stats);
     renderPreview();
     renderStats();

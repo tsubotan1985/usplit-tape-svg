@@ -12,6 +12,13 @@ import sys
 from . import geom, svgout
 
 
+def drop_sel(face, spec):
+    """--drop が未指定なら最大ピース以外を外す。空文字を渡されたら全部残す。"""
+    if spec is None:
+        return [p["id"] for p in geom.piece_table(face["loops"])[1:]]
+    return [s for s in spec.split(",") if s]
+
+
 def load(path, min_area=0.8):
     tris = geom.read_stl(path)
     return tris, geom.detect_faces(tris, min_area=min_area)
@@ -42,7 +49,7 @@ def main(argv=None):
     ap.add_argument("--margin", type=float, default=4.0)
     ap.add_argument("--copies", type=int, default=1)
     ap.add_argument("--tabs", type=int, default=0)
-    ap.add_argument("--drop", default="", help="捨てるピースID（カンマ区切り。facesの一覧は svg の stats.pieces）")
+    ap.add_argument("--drop", default=None, help="捨てるピースID（カンマ区切り）。省略時は最大ピース以外を外す。空文字で全部残す")
     ap.add_argument("--tail", type=float, default=0.0, help="輪郭の下側を延長する長さ(mm)。折り返し用")
     ap.add_argument("--mirror-x", action="store_true")
     ap.add_argument("--rotate", type=int, default=0)
@@ -63,7 +70,7 @@ def main(argv=None):
     if not sel:
         print("face not found; run `faces` first", file=sys.stderr)
         return 2
-    cuts = geom.plan_cuts(sel["loops"], direction="ccw", drop=[s for s in a.drop.split(",") if s])
+    cuts = geom.plan_cuts(sel["loops"], direction="ccw", drop=drop_sel(sel, a.drop))
     opts = {
         "offset_mm": a.offset,
         "margin_mm": a.margin,
