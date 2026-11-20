@@ -43,6 +43,7 @@ def main(argv=None):
     ap.add_argument("--copies", type=int, default=1)
     ap.add_argument("--tabs", type=int, default=0)
     ap.add_argument("--drop", default="", help="捨てるピースID（カンマ区切り。facesの一覧は svg の stats.pieces）")
+    ap.add_argument("--tail", type=float, default=0.0, help="輪郭の下側を延長する長さ(mm)。折り返し用")
     ap.add_argument("--mirror-x", action="store_true")
     ap.add_argument("--rotate", type=int, default=0)
     ap.add_argument("--min-area", type=float, default=0.8)
@@ -70,6 +71,7 @@ def main(argv=None):
         "tabs": a.tabs,
         "mirror_x": a.mirror_x,
         "rotate": a.rotate,
+        "tail_mm": a.tail,
         "arc_fit": True,
     }
     res = svgout.build(sel, cuts, opts, name=a.model.rsplit("/", 1)[-1])

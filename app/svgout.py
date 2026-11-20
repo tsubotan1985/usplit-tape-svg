@@ -122,6 +122,66 @@ def _bbox(pts):
     return [min(xs), min(ys), max(xs), max(ys)]
 
 
+def _extend_bottom(pts, tail, band=None):
+    """Replace the bottom end with a full-width rectangle `tail` mm tall.
+
+    Model frame is y-up, so the bottom edge of the sheet is the minimum y.
+    The bottom-most `band` mm of the contour is cut away and a straight
+    rectangle spanning the full width is put back, which gives a flap that
+    can be folded under.  Anything that does not look like a straight-ish
+    bottom (a dome, a cone) is left alone.
+    """
+    n = len(pts)
+    if n < 5:
+        return False
+    y0 = min(p[1] for p in pts)
+    ytop = max(p[1] for p in pts)
+    xmin = min(p[0] for p in pts)
+    xmax = max(p[0] for p in pts)
+    if xmax <= xmin or ytop <= y0:
+        return False
+
+    # Prefer cutting away the whole rounded bottom: go up to where the
+    # contour first reaches full width, so the flap meets a square corner.
+    side = [p[1] for p in pts if abs(p[0] - xmin) < 1e-3 or abs(p[0] - xmax) < 1e-3]
+    y_side = min(side) if side else y0
+    cap = max(0.2, 0.25 * (ytop - y0))
+    cand = [y_side - y0 + 0.05, 0.15, 0.3, 0.6, 1.2, 2.5]
+    bands = [band] if band is not None else [c for c in cand if 0 < c <= cap]
+
+    for bnd in bands:
+        idx = [i for i, p in enumerate(pts) if p[1] <= y0 + bnd]
+        if not idx or len(pts) - len(idx) < 2:
+            continue
+        if idx[-1] - idx[0] + 1 != len(idx):
+            continue  # the bottom run is split across the wrap point
+        # the kept neighbours must sit on the left and right sides, otherwise
+        # the flap would be wider than the body at the seam
+        left = pts[(idx[0] - 1) % n]
+        right = pts[(idx[-1] + 1) % n]
+        if abs(left[0] - xmin) > 0.6 or abs(right[0] - xmax) > 0.6:
+            continue
+        left_first = pts[idx[0]][0] <= pts[idx[-1]][0]
+        xl, xr = left[0], right[0]
+        new = [(xl, y0 + bnd), (xl, y0 - tail), (xr, y0 - tail), (xr, y0 + bnd)]
+        if not left_first:
+            new.reverse()
+        keep = list(pts)
+        keep[idx[0]:idx[-1] + 1] = new
+        # drop consecutive duplicates the seam may create
+        out = []
+        for p in keep:
+            if not out or abs(p[0] - out[-1][0]) > 1e-6 or abs(p[1] - out[-1][1]) > 1e-6:
+                out.append(p)
+        if len(out) >= 2 and abs(out[0][0] - out[-1][0]) <= 1e-6 and abs(out[0][1] - out[-1][1]) <= 1e-6:
+            out.pop()
+        if len(out) < 4:
+            continue
+        pts[:] = out
+        return True
+    return False
+
+
 # -------------------------------------------------------------------- build
 
 
@@ -137,6 +197,15 @@ def build(face, cuts, opts, name="uSPLIT", title_extra=""):
         dict(c, pts=_apply(c["pts"], opts, c["kind"] == "hole"))
         for c in cuts
     ]
+
+    # fold-over flap: extend the bottom edge of the outline downwards
+    tail = max(0.0, min(50.0, float(opts.get("tail_mm", 0.0) or 0.0)))
+    tailed = 0
+    if tail > 0:
+        for c in placed:
+            if c["kind"] == "outer" and _extend_bottom(c["pts"], tail):
+                tailed += 1
+
     b = _bbox([p for c in placed for p in c["pts"]])
     w, h = b[2] - b[0], b[3] - b[1]
 
@@ -229,6 +298,8 @@ def build(face, cuts, opts, name="uSPLIT", title_extra=""):
         "copies": copies,
         "n_cuts": k,
         "cut_length": round(sum(r["length"] for r in rows), 2),
+        "tail_mm": round(tail, 3),
+        "n_tailed": tailed,
         "order": rows,
     }
     return {"svg": svg, "stats": stats}

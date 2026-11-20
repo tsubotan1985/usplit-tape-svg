@@ -16,7 +16,7 @@ STLの平面を選び、カッティングマシン用のカット線SVG（実�
 3. **カット順プレビュー** — カット順の番号、開始点（●）、シート枠。`▶ 順に再生` で刃の通り道を再生
 4. **カット順と開始位置** — 線ごとに `上 / 下 / 左 / 右` で開始位置、`↻ ↺` で回転方向、
    `↑ ↓` で順番、`×` でその線を切らない。行を選んで**プレビューをクリック**すると任意の頂点が開始点になる
-5. **出力設定** — ピース選択（同じ平面の独立領域を外す）、カット線補正、余白、個数、保持タブ、回転、反転
+5. **出力設定** — ピース選択（同じ平面の独立領域を外す。選んだ内容は面ごとに覚える）、カット線補正、余白、個数、保持タブ、下側の延長、回転、反転
 6. **結果** — シート寸法・ピース寸法・カット数・総カット長、SVG／PNGの保存
 
 ## 何をしているか
@@ -64,6 +64,7 @@ POST /api/svg       { job, face, opts }
 | `margin_mm` | シート外周の余白 |
 | `copies` / `copy_gap_mm` | 同じピースを並べる個数と間隔 |
 | `tabs` / `tab_len_mm` | 輪郭に残す保持タブの数と幅 |
+| `tail_mm` | 輪郭の下側を延ばす長さ。折り返して裏に貼るための帯になる（`0` で無効） |
 | `rotate` / `mirror_x` / `mirror_y` | 回転・反転 |
 | `arc_fit` | 円弧化の有無 |
 | `guides` | 10mm基準線を隠しグループで入れる |
@@ -78,6 +79,7 @@ POST /api/svg       { job, face, opts }
 ```bash
 python3 -m app.cli faces model.stl                      # 面の一覧
 python3 -m app.cli svg   model.stl --face 0 --drop 2 -o tape.svg
+python3 -m app.cli svg   model.stl --face 0 --drop 2 --tail 5 -o tape_fold.svg   # 下側を5mm延長
 python3 -m app.cli png   model.stl --face 0 --drop 2 -o tape.png --dpi 600
 ```
 

@@ -12,7 +12,7 @@
     }catch(e){}
   })();
 </script>
-<link rel="stylesheet" href="/static/style.css?v=1.1.0">
+<link rel="stylesheet" href="/static/style.css?v=1.2.1">
 </head>
 <body>
 
@@ -22,7 +22,7 @@
     <p class="sub">STLの平面を選び、両面テープ用のカット線を実寸1:1のSVGで書き出す</p>
   </div>
   <div class="meta">
-    <span class="ver" id="ver">v1.1.0</span>
+    <span class="ver" id="ver">v1.2.0</span>
     <button class="iconbtn" id="theme" title="テーマ切替">☾</button>
   </div>
 </header>
@@ -102,6 +102,10 @@
         <input type="number" id="tablen" value="1.2" step="0.1" min="0.3" max="10">
       </div>
       <div class="opt">
+        <label>下側の延長 <small>輪郭の下端を下へ延ばす（折り返し用）[mm]</small></label>
+        <input type="number" id="tail" value="0" step="0.5" min="0" max="50">
+      </div>
+      <div class="opt">
         <label>回転 <small>テープ幅に合わせて回す</small></label>
         <select id="rotate">
           <option value="0">0°</option>
@@ -144,6 +148,6 @@
   カット順はSVG内のグループ順（<code>cut01, cut02, …</code>）として書き出します。順序を無視して独自最適化するカッティングソフトでは、その順で切られないことがあります。
 </footer>
 
-<script src="/static/app.js?v=1.1.0"></script>
+<script src="/static/app.js?v=1.2.1"></script>
 </body>
 </html>

@@ -16,7 +16,7 @@ from . import geom, svgout
 ROOT = os.path.dirname(os.path.abspath(__file__))
 DATA = os.environ.get("DATA_DIR", os.path.join(os.path.dirname(ROOT), "data"))
 STATIC = os.path.join(ROOT, "static")
-VERSION = "1.1.0"
+VERSION = "1.2.1"
 MAX_UPLOAD = 60 * 1024 * 1024
 MAX_FACES = 20
 
@@ -115,16 +115,19 @@ def make_svg(job, face_id, opts):
     ]
     applied = {c["cid"]: c for c in cuts}
     pts_by_id = {r["id"]: r.get("pts") for r in stats["order"] if r.get("id") and r.get("pts")}
+    tail = float(stats.get("tail_mm") or 0.0)
     contours = []
     for t in geom.contour_table(face["loops"]):
         a = applied.get(t["id"])
+        # 折り返しを伸ばした外形は、その分だけ縦に長くなる
+        ch = round(t["h"] + (tail if (tail > 0 and t["kind"] == "outer") else 0.0), 2)
         contours.append(
             {
                 "id": t["id"],
                 "kind": t["kind"],
                 "d": t["d"],
                 "w": t["w"],
-                "h": t["h"],
+                "h": ch,
                 "length": t["length"],
                 "area": t["area"],
                 "include": a is not None,

@@ -1,6 +1,6 @@
 services:
   tape-svg:
-    image: usplit-tape-svg:1.1.0
+    image: usplit-tape-svg:1.2.1
     container_name: usplit-tape-svg
     ports:
       - "8098:8000"

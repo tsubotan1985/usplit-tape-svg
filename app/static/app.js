@@ -110,7 +110,7 @@ function renderFaces(j) {
 
 function selectFace(id) {
   S.face = id;
-  S.drop = [];
+  S.drop = loadDrop(id);
   S.cut = [];
   S.pts = {};
   S.sel = null;
@@ -121,7 +121,7 @@ function selectFace(id) {
 }
 
 /* ------------------------------------------------------------ options */
-const OPT_IDS = ['offset', 'margin', 'copies', 'gap', 'tabs', 'tablen', 'rotate', 'mirrorx', 'mirrory', 'arcfit', 'guides'];
+const OPT_IDS = ['offset', 'margin', 'copies', 'gap', 'tabs', 'tablen', 'tail', 'rotate', 'mirrorx', 'mirrory', 'arcfit', 'guides'];
 OPT_IDS.forEach((id) => {
   $(id).addEventListener('input', schedule);
   $(id).addEventListener('change', schedule);
@@ -140,6 +140,7 @@ function opts() {
     mirror_y: $('mirrory').checked,
     arc_fit: $('arcfit').checked,
     guides: $('guides').checked,
+    tail_mm: Math.max(0, num('tail', 0)),
     drop_pieces: S.drop.slice(),
     contours: S.cut.map((c) => ({
       id: c.id, include: c.include, order: c.order, start_index: c.start_index, dir: c.dir,
@@ -149,6 +150,18 @@ function opts() {
 function num(id, dflt) {
   const v = parseFloat($(id).value);
   return Number.isFinite(v) ? v : dflt;
+}
+
+/* remember the pieces switched off for each face */
+function dropKey(id) { return 'usplit.drop.' + id; }
+function loadDrop(id) {
+  try {
+    const v = JSON.parse(localStorage.getItem(dropKey(id)) || '[]');
+    return Array.isArray(v) ? v : [];
+  } catch (e) { return []; }
+}
+function saveDrop() {
+  try { if (S.face) localStorage.setItem(dropKey(S.face), JSON.stringify(S.drop)); } catch (e) {}
 }
 function schedule() {
   clearTimeout(S.timer);
@@ -455,6 +468,7 @@ function renderPieces(s) {
     lab.querySelector('input').addEventListener('change', (e) => {
       if (e.target.checked) S.drop = S.drop.filter((x) => x !== p.id);
       else if (!S.drop.includes(p.id)) S.drop.push(p.id);
+      saveDrop();
       S.cut = [];  // ピース構成が変わったらカット一覧は作り直す
       S.sel = null;
       schedule();
